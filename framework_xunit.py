@@ -62,7 +62,7 @@ class TestCase:
             test_method()
         except AssertionError:
             result.add_failure(self.test_method_name)
-        except Exception:
+        except Exception as e:
             result.add_error(self.test_method_name)
         self.tear_down()
 

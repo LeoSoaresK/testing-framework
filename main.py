@@ -11,29 +11,67 @@ class TestStub(TestCase):
 class TestSpy(TestCase):
     def __init__(self, name):
         super().__init__(name)
+        # ESTES ERAM OS ATRIBUTOS QUE ESTAVAM FALTANDO:
+        self.was_run = False
+        self.was_set_up = False
+        self.was_tear_down = False
         self.log = ""
+
     def set_up(self):
+        self.was_set_up = True
         self.log += "set_up "
+
     def test_method(self):
+        self.was_run = True
         self.log += "test_method "
+
     def tear_down(self):
+        self.was_tear_down = True
         self.log += "tear_down"
 
 class TestCaseTest(TestCase):
     def set_up(self):
         self.result = TestResult()
+    
     def test_result_success_run(self):
         stub = TestStub("test_success")
         stub.run(self.result)
         assert self.result.summary() == "1 run, 0 failed, 0 error"
+
     def test_result_failure_run(self):
         stub = TestStub("test_failure")
         stub.run(self.result)
         assert self.result.summary() == "1 run, 1 failed, 0 error"
+
     def test_result_error_run(self):
         stub = TestStub("test_error")
         stub.run(self.result)
         assert self.result.summary() == "1 run, 0 failed, 1 error"
+
+    def test_result_multiple_run(self):
+        stub = TestStub("test_success")
+        stub.run(self.result)
+        stub = TestStub("test_failure")
+        stub.run(self.result)
+        stub = TestStub("test_error")
+        stub.run(self.result)
+        assert self.result.summary() == "3 run, 1 failed, 1 error"
+
+    def test_was_set_up(self):
+        spy = TestSpy('test_method')
+        spy.run(self.result)
+        assert spy.was_set_up
+
+    def test_was_run(self):
+        spy = TestSpy('test_method')
+        spy.run(self.result)
+        assert spy.was_run
+
+    def test_was_tear_down(self):
+        spy = TestSpy('test_method')
+        spy.run(self.result)
+        assert spy.was_tear_down
+
     def test_template_method(self):
         spy = TestSpy("test_method")
         spy.run(self.result)
@@ -44,31 +82,61 @@ class TestSuiteTest(TestCase):
         suite = TestSuite()
         suite.add_test(TestStub("test_success"))
         suite.add_test(TestStub("test_failure"))
-        assert len(suite.tests) == 2
-    def test_suite_run(self):
+        suite.add_test(TestStub("test_error"))
+        assert len(suite.tests) == 3
+
+    def test_suite_success_run(self):
+        result = TestResult()
+        suite = TestSuite()
+        suite.add_test(TestStub("test_success"))
+        suite.run(result)
+        assert result.summary() == "1 run, 0 failed, 0 error"
+
+    def test_suite_multiple_run(self):
         result = TestResult()
         suite = TestSuite()
         suite.add_test(TestStub("test_success"))
         suite.add_test(TestStub("test_failure"))
+        suite.add_test(TestStub("test_error"))
         suite.run(result)
-        assert result.summary() == "2 run, 1 failed, 0 error"
+        assert result.summary() == "3 run, 1 failed, 1 error"
 
 class TestLoaderTest(TestCase):
     def test_create_suite(self):
         loader = TestLoader()
         suite = loader.make_suite(TestStub)
         assert len(suite.tests) == 3
-    def test_get_test_case_names(self):
+
+    def test_create_suite_of_suites(self):
+        loader = TestLoader()
+        stub_suite = loader.make_suite(TestStub)
+        spy_suite = loader.make_suite(TestSpy)
+        suite = TestSuite()
+        suite.add_test(stub_suite)
+        suite.add_test(spy_suite)
+        assert len(suite.tests) == 2
+
+    def test_get_multiple_test_case_names(self):
         loader = TestLoader()
         names = loader.get_test_case_names(TestStub)
+        # A ordem alfabética pode variar, mas os nomes devem estar lá
         assert "test_success" in names
         assert "test_failure" in names
         assert "test_error" in names
+
+    def test_get_no_test_case_names(self):
+        class EmptyTest(TestCase):
+            def no_test_here(self):
+                pass
+        loader = TestLoader()
+        names = loader.get_test_case_names(EmptyTest)
+        assert names == []
 
 if __name__ == "__main__":
     loader = TestLoader()
     suite = TestSuite()
     
+    # Adicionando as suítes de cada classe de teste
     suite.add_test(loader.make_suite(TestCaseTest))
     suite.add_test(loader.make_suite(TestSuiteTest))
     suite.add_test(loader.make_suite(TestLoaderTest))
