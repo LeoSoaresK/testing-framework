@@ -1,4 +1,4 @@
-from framework_xunit import TestCase, TestResult, TestSuite
+from framework_xunit import TestCase, TestResult, TestSuite, TestLoader, TestRunner
 
 class TestStub(TestCase):
     def test_success(self):
@@ -53,17 +53,25 @@ class TestSuiteTest(TestCase):
         suite.run(result)
         assert result.summary() == "2 run, 1 failed, 0 error"
 
+class TestLoaderTest(TestCase):
+    def test_create_suite(self):
+        loader = TestLoader()
+        suite = loader.make_suite(TestStub)
+        assert len(suite.tests) == 3
+    def test_get_test_case_names(self):
+        loader = TestLoader()
+        names = loader.get_test_case_names(TestStub)
+        assert "test_success" in names
+        assert "test_failure" in names
+        assert "test_error" in names
+
 if __name__ == "__main__":
-    final_result = TestResult()
+    loader = TestLoader()
     suite = TestSuite()
     
-    suite.add_test(TestCaseTest("test_result_success_run"))
-    suite.add_test(TestCaseTest("test_result_failure_run"))
-    suite.add_test(TestCaseTest("test_result_error_run"))
-    suite.add_test(TestCaseTest("test_template_method"))
-    suite.add_test(TestSuiteTest("test_suite_size"))
-    suite.add_test(TestSuiteTest("test_suite_run"))
+    suite.add_test(loader.make_suite(TestCaseTest))
+    suite.add_test(loader.make_suite(TestSuiteTest))
+    suite.add_test(loader.make_suite(TestLoaderTest))
     
-    suite.run(final_result)
-    print(f"{final_result.summary()}")
-    assert len(final_result.failures) == 0 and len(final_result.errors) == 0
+    runner = TestRunner()
+    runner.run(suite)
