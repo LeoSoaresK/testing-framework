@@ -16,6 +16,17 @@ class TestResult:
     def summary(self):
         return f"{self.run_count} run, {len(self.failures)} failed, {len(self.errors)} error"
 
+class TestSuite:
+    def __init__(self):
+        self.tests = []
+
+    def add_test(self, test):
+        self.tests.append(test)
+
+    def run(self, result):
+        for test in self.tests:
+            test.run(result)
+
 class TestCase:
     def __init__(self, test_method_name):
         self.test_method_name = test_method_name
