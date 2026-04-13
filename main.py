@@ -1,20 +1,26 @@
-from framework_xunit import TestCase
+from framework_xunit import TestCase, TestResult
 
-class TestSpy(TestCase):
-    def __init__(self, name):
-        super().__init__(name)
-        self.log = ""
+class TestStub(TestCase):
+    def test_success(self):
+        assert True
 
-    def set_up(self):
-        self.log += "set_up "
-    def test_method(self):
-        self.log += "test_method "
+    def test_failure(self):
+        assert False
 
-    def tear_down(self):
-        self.log += "tear_down"
+    def test_error(self):
+        raise Exception
 
 if __name__ == "__main__":
-    spy = TestSpy("test_method")
-    spy.run()
-    print(f"Sequência executada: {spy.log}")
-    assert spy.log == "set_up test_method tear_down"
+    result = TestResult()
+    
+    test1 = TestStub("test_success")
+    test1.run(result)
+    
+    test2 = TestStub("test_failure")
+    test2.run(result)
+    
+    test3 = TestStub("test_error")
+    test3.run(result)
+    
+    print(result.summary())
+    assert result.summary() == "3 run, 1 failed, 1 error"
